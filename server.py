@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-from flask import Flask, render_template
-
-app = Flask(__name__)
-=======
 from flask import Flask, render_template, request, Blueprint
 from pymongo import MongoClient
 import json 
@@ -14,17 +9,12 @@ client = MongoClient(os.getenv("MONGO_CONNECTION_STRING"))
 
 
 v1 = Blueprint('v1', __name__, prefix = '/api/v1')
->>>>>>> dev
 
 @app.route('/')
 def home():
     #i love sex squishey this function makes me want to have sex 
     return render_template('index.html')
 
-<<<<<<< HEAD
-@app.route('/api/v1/upload')
-def upload():
-=======
 @v1.route('/upload')
 def upload():
     api_key = request.headers.get('api_key')
@@ -38,7 +28,6 @@ def upload():
     if request.args.get('filename') == None:
         return "{'error' : 'filename is blank'}",400
     
->>>>>>> dev
     #im sex
     return "file_uploaded"
 
