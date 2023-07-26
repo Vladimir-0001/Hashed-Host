@@ -1,9 +1,11 @@
 # Hashed-Host
 
 # TODO
-- [ ] Implement `login` function.
+- [ ] Make the tier system into all functions
+- [x] Implement `login` function.
 - [x] Create `make account` function.
-- [ ] Refactor code: move functions to a separate library.
+- [x] Refactor code: move functions to a separate library.
+- [ ] put account based function in their own module 
 - [ ] Enhance `upload` function: accept file data.
 - [x] Implement `redeem` functionality: add current subscription.
 - [ ] Security: encrypt data from `upload` function if the key is provided.
