@@ -1,285 +1,83 @@
-from flask import Flask, render_template, request, Blueprint
-
-from ipaddress import ip_interface
-
-from pymongo import MongoClient
-
+from flask import Flask, render_template, request, Blueprint,jsonify
+from hashed.tools import *
+from hashed.constants import *
 import secrets
-
-import time 
-
+import time
 import hashlib
-
 import random
+import os
 
-import json 
+v1 = Blueprint('v1', __name__, url_prefix='/api/v1')
 
-import os 
-
-
-
-v1 = Blueprint('v1',__name__)
-
-
-client = MongoClient(os.getenv('MONGO_CONNECTION_STRING'))
-
-db = client['Hashed']
-
-
-accounts = db['accounts']
-
-keys = db['keys']
-
-storage = db['storage']
-
-
-# ACCOUNT FIELDS & OPTIONS
-
-ACCOUNT_MAX_IPS = 3
-
-ACCOUNT_IP_LIST = 'ip_list'
-
-ACCOUNT_API_KEY = 'api-key'
-
-ACCOUNT_EXPIRY_FIELD = "expiry"
-
-
-#ENDPOINT FIELDS
-
-
-API_KEY_FIELD = 'api-key'
-
-
-#UPLOAD FIELDS
-
-FILE_NAME_FIELD = 'file-name'
-
-
-#REDEEM FIELDS
-
-ACTIVATION_KEY = 'key'
-
-
-#Account Activation Settings
-
-REDEEMABLE_KEY = 'license_key'
-
-LICENSE_TIME = 'time'
-
-API_KEY_TOKEN_HEX_LENGTH = 16
-
-
-
-v1 = Blueprint('v1', __name__, url_prefix = '/api/v1')
-
-def process_ip(ip_address):
-
-    ip_address = anonymize_ip(ip_address)
-
-    hashed_ip = hashlib.sha256(bytes(ip_address, 'utf-8')).hexdigest()
-
-    return hashed_ip
-
-
-def redeem_license(account,license):
-
-    now = int(time.time())
-
-    expiry_time = now + int(license[LICENSE_TIME])
-
-    if account[ACCOUNT_EXPIRY_FIELD] < now:
-
-        accounts.update_one({API_KEY_FIELD: account[API_KEY_FIELD]}, {'$set': {ACCOUNT_EXPIRY_FIELD:expiry_time}})
-
-        keys.delete_one({REDEEMABLE_KEY:license[REDEEMABLE_KEY]})
-
-    return expiry_time
-
-
-def make_account(request,license):
-
-    ip_address = process_ip(get_ip(request))
-
-    api_key = "hashed_" + secrets.token_hex(API_KEY_TOKEN_HEX_LENGTH)
-
-    account = {
-
-        API_KEY_FIELD:api_key,
-
-        ACCOUNT_EXPIRY_FIELD: int(time.time())+int(license[LICENSE_TIME]),
-
-        ACCOUNT_IP_LIST:[str(ip_address)]
-
-    }
-
-    accounts.insert_one(account)
-
-    keys.delete_one({REDEEMABLE_KEY:license[REDEEMABLE_KEY]})
-
-    return {API_KEY_FIELD:api_key},200
-    
-
-def anonymize_ip(ip_address):
-
-    if '.' in ip_address:  #IPv4
-
-        ip_parts = ip_address.split('.')
-
-        ip_parts[-1] = '0' 
-
-        anonymized_ip = '.'.join(ip_parts)
-
-    elif ':' in ip_address:  # IPv6
-
-        ip = ip_interface(ip_address + '/64')  
-
-        anonymized_ip = str(ip.network.network_address)
-    else:
-
-        raise ValueError(f"Invalid IP address: {ip_address}")
-
-    return anonymized_ip
-
-
-def check_api_key(api_key):
-    print(api_key)
-
-    print({API_KEY_FIELD : api_key})
-
-    check_key = accounts.find_one({API_KEY_FIELD : api_key})
-
-    return check_key
-
-
-def get_ip(request):
-
-
-    if "Cf-Connecting-IP" in request.headers:
-
-        ip_address = request.headers["Cf-Connecting-IP"]
-    else:
-
-        ip_address = request.remote_addr
-    return ip_address
-
-
-def verify_request(request, api_key, add = True, max_ips = ACCOUNT_MAX_IPS):
-
-    if check_api_key(api_key) == None:
-
-        return {'success': False, 'message':'Invalid API Key header', 'code': 403}
-    
-
-    ip_address = get_ip(request)
-
-    account = check_api_key(api_key)
-
-    ip_list = account[ACCOUNT_IP_LIST]
-
-    hashed_ip = process_ip(ip_address)
-    
-
-    if hashed_ip not in ip_list:
-
-        if len(ip_list) < max_ips and add == True:
-
-            ip_list.append(hashed_ip)
-
-            accounts.update_one({ ACCOUNT_API_KEY : api_key},{"$push": { ACCOUNT_IP_LIST: hashed_ip}} )
-        else:
-
-            return {'success': False, 'message':'IP not authorized please turn off any VPN or Proxy service. account sharing will lead to permanent termination of your account', 'code': 403}
-        
-
-    return {'success': True, 'message':'','code': 200}
-        
-    
-
-@v1.route('/upload', methods = ['POST'])
+#upload method
+@v1.route('/upload', methods=['POST'])
 def upload():
+    # get the headers required for this route
+    api_key = request.headers.get(API_KEY_FIELD)
+    filename = request.headers.get(UPLOAD_FILE_NAME_FIELD)
+    encryption_key = request.headers.get(ENCRYPTION_KEY_FIELD)
 
-    #get the headers required for this route  
-
-    api_key = request.headers.get(API_KEY_FIELD) 
-
-    filename = request.headers.get(FILE_NAME_FIELD)
-    
-
-    if api_key == None:
-
+    if api_key is None:
         return {'error': 'API Key header not provided'}, 400
 
-    if filename == None:
+    if filename is None:
+        return {'error': 'File Name header is blank'}, 400
 
-        return {'error' : 'File Name header is blank'}, 400
+    verification_result = verify_request(request, api_key)
+    if not verification_result['success']:
+        return jsonify({'error': verification_result['message']}, verification_result["code"])
     
+    file_data = request.data
+    if not verify_upload(file_data, api_key):
+        return jsonify({'error': 'Either no file data provided or file size is too large'}), 400
 
-    verification_result = verify_request(request,api_key)
-    
-
-    if verification_result['success']:
-
-        return {'file':'uploaded lol'}, 200
+    upload_result = encrypted_upload(file_data,encryption_key,api_key,filename)
+    if not upload_result['success']:
+        return jsonify({'error': upload_result['error']}),upload_result['code']
     else:
-
-        return {'error': verification_result['message']}, verification_result["code"] 
+        return jsonify({'message' :upload_result['message']}),upload_result['code']
     
     
-
-    return "file_uploaded"
-
-
-
-
-@v1.route('/redeem',methods=['POST'])
-
+@v1.route('/redeem', methods=['POST'])
 def redeem():
+    api_key = request.headers.get(API_KEY_FIELD)
+    key = request.get_json().get(ACTIVATION_KEY)
 
-    api_key = request.headers.get(API_KEY_FIELD) 
-
-    key  = request.get_json().get(ACTIVATION_KEY)
-
-    if key == None:
-
-        return {'error': 'invalid request, Activation Key is required'}, 400
+    if key is None:
+        return jsonify({'error': 'Invalid request, Activation Key is required'}), 400
     
-
-    if api_key == None:
-
-        license = keys.find_one({REDEEMABLE_KEY: key})
-        if not license:
-
-            return {'error':'license Key not Found '}, 400
-
-        return make_account(request,license)
-
-        ELE
+    license = keys.find_one({LICENSE_KEY: key})
+    if not license:
+        return jsonify({'error': 'Activation Key not Found in DB'}), 400
+    
+    if api_key is None:
+        return make_account(request, license)
+    
     else:
-        print(api_key)
-
         account = check_api_key(api_key)
-
-        license = keys.find_one({REDEEMABLE_KEY: key})
-        if not license:
-
-            return{'error':'invalid license key'}, 400 
         if not account:
-
-            return {'error':'Api key Invalid '}, 400
-
-        expiry  = redeem_license(account,license)
-
-        return {'expiry':expiry}, 200
+            return jsonify({'error': 'API key Invalid '}), 400
+        expiry = redeem_license(account, license)
+        return jsonify({'expiry': expiry}), 200
 
 
-
-@v1.route('/login')
-
+@v1.route('/login', methods=['POST'])
 def login():
+    api_key = request.headers.get(API_KEY_FIELD)
+    if api_key is None:
+        return {'error': 'API key is required'}
+    verification_result = verify_request(request, api_key)
+    if not verification_result['success']:
+        return {'error': verification_result['message']}, verification_result["code"]
+    account = check_api_key(api_key)
+    if not account:
+        return {'error': 'API key Invalid '}, 400
 
-    #again , i am sex 
-
-    return "Hello, World!"
-
+    account = {
+        ACCOUNT_API_KEY: account[ACCOUNT_API_KEY],
+        ACCOUNT_EXPIRY_FIELD: account[ACCOUNT_EXPIRY_FIELD],
+        ACCOUNT_TIER_ID: account[ACCOUNT_TIER_ID]
+    }
+    return {'account': account}
 
 
