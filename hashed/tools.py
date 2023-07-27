@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, Blueprint
+from hashed.constants import *
 from pathvalidate import sanitize_filename
 from ipaddress import ip_interface
 from pymongo import MongoClient
@@ -14,36 +15,12 @@ import sys
 import os
 
 client = MongoClient(os.getenv('MONGO_CONNECTION_STRING'))
-db = client['Hashed']
 
+db = client['Hashed']
 accounts = db['accounts']
 keys = db['keys']
 storage = db['storage']
 tiers = db['tiers']
-
-FILE_SAVE_LOCATION = 'C:\\Users\\creck\\OneDrive\\Documents\\Hashed Host\\Hashed-Host\\Files\\'
-
-# DATABASE KEYS
-ACCOUNT_IP_LIST = 'ip-list'
-ACCOUNT_API_KEY = 'api-key'
-ACCOUNT_TIER_ID = 'tier-id'
-ACCOUNT_EXPIRY_FIELD = "expiry"
-
-STORAGE_FILE_ID = 'file-id'
-STORAGE_FILE_NAME = 'file-name'
-STORAGE_FILE_CIPHER_IV = 'cipher-iv'
-STORAGE_FILE_PASSWORD = 'password'
-STORAGE_FILE_FLAGGED = 'flagged'
-
-LICENSE_KEY = 'license-key'
-LICENSE_TIME = 'time'
-
-TIER_LIMITS = 'limits'
-TIER_MAX_UPLOAD = 'max-upload-mb'
-# Account Settings
-API_KEY_TOKEN_HEX_LENGTH = 16
-ACCOUNT_MAX_IPS = 3
-FILE_ID_LENGTH = 9
 
 
 def is_hex(s):
@@ -102,6 +79,7 @@ def decrypt_data(data, hex_key, hex_iv):
     
     cipher = AES.new(key,AES.MODE_CBC,iv=cipher_iv)
     decrypted_bytes = unpad(cipher.decrypt(data),AES.block_size)
+    
     return decrypted_bytes
 
 
@@ -130,12 +108,12 @@ def encrypted_upload(data,encryption_key,api_key,file_name):
         return {'success':False, 'error':'encryption hex needs to be 32 characters in length', 'code': 400}
     
     if not is_hex(encryption_key):
-        return {'success': False, 'error':'encryption key is not valid hex'}
+        return {'success': False, 'error':'encryption key is not valid hex', 'code': 400}
     
     encrypted_data = encrypt_data(data,encryption_key)
     file_id = save_file(encrypted_data[0],encrypted_data[1],encryption_key,file_name)
     
-    return {'success':True,'message':{'url':'http://localhost:5000/file/raw/'+str(file_id)+"/"+str(encryption_key)},'code':200}
+    return {'success':True,"message":{'url':'http://localhost:5000/file/raw/'+str(file_id)+"/"+str(encryption_key)},'code':200}
 
 def verify_upload(data, api_key):
     if not data:
@@ -156,11 +134,14 @@ def redeem_license(account, license):
     if account[ACCOUNT_EXPIRY_FIELD] > now:
         expiry_time = int(account[ACCOUNT_EXPIRY_FIELD]) + int(license[LICENSE_TIME])
         accounts.update_one({ACCOUNT_API_KEY: account[ACCOUNT_API_KEY]}, {'$set': {ACCOUNT_EXPIRY_FIELD: expiry_time}})
-        keys.delete_one({LICENSE_KEY: license[LICENSE_KEY]})
+        if account['tier-id'] != 0:
+            keys.delete_one({LICENSE_KEY: license[LICENSE_KEY]})
     else:
         expiry_time = now + int(license[LICENSE_TIME])
         accounts.update_one({ACCOUNT_API_KEY: account[ACCOUNT_API_KEY]}, {'$set': {ACCOUNT_EXPIRY_FIELD: expiry_time}})
-        keys.delete_one({LICENSE_KEY: license[LICENSE_KEY]})
+        #CHANGE THIS IMMEDIATELY THIS IS JUST FILLER THAT WILL KEEP THE KEY FROM GETTING DELETED DURING TESTING
+        if account['tier-id'] != 0:
+            keys.delete_one({LICENSE_KEY: license[LICENSE_KEY]})
     return expiry_time
 
 
