@@ -1,6 +1,6 @@
 # Hashed-Host
 
-# TODO
+# 🚧TODO🚧
 - [x] Enhance `upload` function: accept file data.
 - [x] Implement `redeem` functionality: add current subscription.
 - [x] Security: encrypt data from `upload` function if the key is provided.
