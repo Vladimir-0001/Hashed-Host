@@ -1,4 +1,4 @@
-FILE_SAVE_LOCATION = 'C:\\Users\\creck\\OneDrive\\Documents\\Hashed Host\\Hashed-Host\\Files\\'
+FILE_SAVE_LOCATION = ''
 
 # DATABASE KEYS
 ACCOUNT_IP_LIST = 'ip-list'
