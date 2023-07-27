@@ -3,10 +3,12 @@ import json
 from flask import Flask
 from hashed.v1 import v1 
 from hashed.constants import *
+from hashed.file import file
 
 
 app = Flask(__name__)
 app.register_blueprint(v1)
+app.register_blueprint(file)
 
 @pytest.fixture
 def client():
@@ -74,3 +76,16 @@ def test_login_no_api_key(client):
     response = client.post('api/v1/login')
     assert response.status_code == 403
     assert response.json == {'error':'Invalid API Key header'}
+    
+    
+def test_encryption_and_decryption(client):
+    response = client.post('/api/v1/upload', headers = {UPLOAD_FILE_NAME_FIELD:'test.txt', API_KEY_FIELD:'hashed_testkey'},data = bytes('test','utf-8'))
+    assert response.status_code == 200
+    assert response.json.get('message') != None
+    url = response.json['message']['url'].split('/')
+    file_key = url[6]   
+    file_id = url[5]
+    print(f'/raw/{file_id}/{file_key}')
+    response = client.get(f'file/raw/{file_id}/{file_key}')
+    assert response.data== bytes("test", 'utf-8')
+    assert response.status_code == 200
