@@ -64,8 +64,6 @@ def redeem():
 @v1.route('/login', methods=['POST'])
 def login():
     api_key = request.headers.get(API_KEY_FIELD)
-    if api_key is None:
-        return {'error': 'API key is required'}
     verification_result = verify_request(request, api_key)
     if not verification_result['success']:
         return {'error': verification_result['message']}, verification_result["code"]
@@ -78,6 +76,6 @@ def login():
         ACCOUNT_EXPIRY_FIELD: account[ACCOUNT_EXPIRY_FIELD],
         ACCOUNT_TIER_ID: account[ACCOUNT_TIER_ID]
     }
-    return {'account': account}
+    return {'account': account}, 200 
 
 

@@ -31,7 +31,7 @@ def test_empty_upload_data(client):
     assert response.json == {'error': 'Either no file data provided or file size is too large'}
     assert response.status_code == 400
     
-def test_normal_upload(client):
+def test_upload_normal(client):
     response = client.post('/api/v1/upload', headers = {UPLOAD_FILE_NAME_FIELD:'test.txt', API_KEY_FIELD:'hashed_testkey'},data = bytes('test','utf-8'))
     assert response.status_code == 200
     assert response.json.get('message') != None
@@ -59,3 +59,18 @@ def test_redeem_normal(client):
     response = client.post('api/v1/redeem', headers = {API_KEY_FIELD:'hashed_testkey'}, json  = {ACTIVATION_KEY:'redeem_testkey'})
     assert response.json.get('expiry') != None
     assert response.status_code == 200
+    
+def test_login_normal(client):
+    response = client.post('api/v1/login', headers = {API_KEY_FIELD:'hashed_testkey'})
+    assert response.status_code == 200
+    assert response.json.get('account') != None
+
+def test_login_invalid_api_key(client):
+    response = client.post('api/v1/login', headers = {API_KEY_FIELD:'bad_api_key'})
+    assert response.status_code == 403
+    assert response.json == {'error':'Invalid API Key header'}
+
+def test_login_no_api_key(client):
+    response = client.post('api/v1/login')
+    assert response.status_code == 403
+    assert response.json == {'error':'Invalid API Key header'}
