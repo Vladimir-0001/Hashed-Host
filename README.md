@@ -9,9 +9,9 @@
 - [x] Create `make account` function.
 - [x] Refactor code: move functions to a separate library.
 - [ ] Add comments, and doc strings 
-- [ ] make and add unit tests
+- [x] make and add unit tests
 - [ ] add check headers function to check for required headers 
-- [ ] Make the tier system into all functions
+- [ ] add tier system into all functions
 - [ ] Organize the functions 
 - [ ] make consistent api validation and proper api responses
 - [ ] remove print functions and add proper logging 
