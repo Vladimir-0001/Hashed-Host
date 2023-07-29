@@ -3,6 +3,7 @@ import json
 from flask import Flask
 from hashed.v1 import v1 
 from hashed.constants import *
+from hashed.errors import Errors as errors
 from hashed.file import file
 
 
@@ -21,22 +22,26 @@ def client():
 #################### Upload Tests ##################
 ####################################################
     
-        
+#TODO add test for bad api_key headers 
+
+
 def test_upload_missing_headers(client):
     #Test for missing api key header
     response = client.post('/api/v1/upload', headers = {UPLOAD_FILE_NAME_FIELD:'test.txt'})
-    assert response.status_code == 400
-    assert response.json == {'error': 'API Key header not provided'}
+    expected_response = errors.no_api_key()
+    assert response.status_code == expected_response.status_code
+    assert response.json == expected_response.json
     #test for missing file name header 
     response = client.post('/api/v1/upload', headers = {API_KEY_FIELD:'hashed_testkey'})
-    assert response.status_code == 400
-    assert response.json == {'error': 'File Name header is blank'}
+    expected_response = errors.no_filename()
+    assert response.status_code == expected_response.status_code
+    assert response.json == expected_response.json
     
 def test_empty_upload_data(client):
     response = client.post('/api/v1/upload', headers = {UPLOAD_FILE_NAME_FIELD:'test.txt', API_KEY_FIELD:'hashed_testkey'},data = "")
-    
-    assert response.json == {'error': 'Either no file data provided or file size is too large'}
-    assert response.status_code == 400
+    expected_response = errors.filesize_over_tier_max()
+    assert response.status_code == expected_response.status_code
+    assert response.json == expected_response.json
     
 def test_upload_normal(client):
     response = client.post('/api/v1/upload', headers = {UPLOAD_FILE_NAME_FIELD:'test.txt', API_KEY_FIELD:'hashed_testkey'},data = bytes('test','utf-8'))
@@ -45,11 +50,17 @@ def test_upload_normal(client):
 
 def test_upload_bad_hex(client):
     response = client.post('/api/v1/upload', headers = {UPLOAD_FILE_NAME_FIELD:'test.txt', API_KEY_FIELD:'hashed_testkey',ENCRYPTION_KEY_FIELD:"bad_encryption_key"},data = bytes('test','utf-8'))
-    assert response.json == {'error':'encryption hex needs to be 32 characters in length'}
-    assert response.status_code == 400
-    response = client.post('/api/v1/upload', headers = {UPLOAD_FILE_NAME_FIELD:'test.txt', API_KEY_FIELD:'hashed_testkey',ENCRYPTION_KEY_FIELD:"1111111111111111111111111111111k"},data = bytes('test','utf-8'))
-    assert response.json == {'error':'encryption key is not valid hex'}
-    assert response.status_code == 400
+    expected_response = errors.invalid_encryption_hex_length()
+    print(f'{response.json = }')
+    print(f'{expected_response.json = }')
+    assert response.status_code == expected_response.status_code
+    assert response.json == expected_response.json
+    response = client.post('/api/v1/upload', headers = {UPLOAD_FILE_NAME_FIELD:'test.txt', API_KEY_FIELD:'hashed_testkey',ENCRYPTION_KEY_FIELD:"11111111111111111111111111111k"},data = bytes('test','utf-8'))
+    print(f'{response.json = }')
+    print(f'{expected_response.json =}')
+    expected_response2 = errors.invalid_encryption_hex()
+    assert response.status_code == expected_response.status_code
+    assert response.json == expected_response.json
     
 def test_encryption_and_decryption(client):
     response = client.post('/api/v1/upload', headers = {UPLOAD_FILE_NAME_FIELD:'test.txt', API_KEY_FIELD:'hashed_testkey'},data = bytes('test','utf-8'))
@@ -59,7 +70,7 @@ def test_encryption_and_decryption(client):
     file_key = url[6]   
     file_id = url[5]
     response = client.get(f'file/raw/{file_id}/{file_key}')
-    assert response.data== bytes("test", 'utf-8')
+    assert response.data == bytes("test", 'utf-8')
     assert response.status_code == 200
 
 ####################################################
@@ -68,17 +79,19 @@ def test_encryption_and_decryption(client):
     
 def test_redeem_invalid_key(client):
     response = client.post("/api/v1/redeem",headers = {API_KEY_FIELD:'hashed_testkey'}, json = {ACTIVATION_KEY:'123'})
-    assert response.json == {'error': 'Activation Key not Found in DB'}
-    assert response.status_code == 400
+    expected_response = errors.invalid_activation_key()
+    assert response.status_code == expected_response.status_code
+    assert response.json == expected_response.json
     
 def test_redeem_missing_key(client):
     response = client.post('api/v1/redeem', headers = {API_KEY_FIELD:'hashed_testkey'}, json ={})
-    assert response.json == {'error': 'Invalid request, Activation Key is required'}
-    assert response.status_code == 400
+    expected_response = errors.no_activation_key()
+    assert response.status_code == expected_response.status_code
+    assert response.json == expected_response.json
 
 def test_redeem_normal(client):
     response = client.post('api/v1/redeem', headers = {API_KEY_FIELD:'hashed_testkey'}, json  = {ACTIVATION_KEY:'redeem_testkey'})
-    assert response.json.get('expiry') != None
+    assert response.json.get('message').get('expiry') != None
     assert response.status_code == 200
     
 ####################################################
@@ -92,13 +105,15 @@ def test_login_normal(client):
 
 def test_login_invalid_api_key(client):
     response = client.post('api/v1/login', headers = {API_KEY_FIELD:'bad_api_key'})
-    assert response.status_code == 403
-    assert response.json == {'error':'Invalid API Key header'}
+    expected_response = errors.api_key_invalid()
+    assert response.status_code == expected_response.status_code
+    assert response.json == expected_response.json
 
 def test_login_no_api_key(client):
     response = client.post('api/v1/login')
-    assert response.status_code == 403
-    assert response.json == {'error':'Invalid API Key header'}
+    expected_response = errors.api_key_invalid()
+    assert response.status_code == expected_response.status_code
+    assert response.json == expected_response.json
     
     
 
