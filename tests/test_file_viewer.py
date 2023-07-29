@@ -1,9 +1,7 @@
 from hashed.file import file
-
 import pytest
 import json
 from flask import Flask
-from hashed.file import file
 from hashed.constants import *
 
 app = Flask(__name__)

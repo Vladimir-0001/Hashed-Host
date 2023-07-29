@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, Blueprint
 from hashed.constants import *
+from hashed.errors import Errors as errors
 from pathvalidate import sanitize_filename
 from ipaddress import ip_interface
 from pymongo import MongoClient
@@ -105,11 +106,13 @@ def encrypted_upload(data,encryption_key,api_key,file_name):
         encryption_key = secrets.token_bytes(16).hex() #128 bit key 
         
     if len(encryption_key) != 32:
-        return {'success':False, 'error':'encryption hex needs to be 32 characters in length', 'code': 400}
+        error = errors.invalid_encryption_hex_length()
+        return {'success': False, 'message':error.json['message'], 'code': error.status_code}
     
     if not is_hex(encryption_key):
-        return {'success': False, 'error':'encryption key is not valid hex', 'code': 400}
-    
+        error = errors.invalid_encryption_hex()
+        return {'success': False, 'message':error.json['message'], 'code': error.status_code}
+   
     encrypted_data = encrypt_data(data,encryption_key)
     file_id = save_file(encrypted_data[0],encrypted_data[1],encryption_key,file_name)
     
@@ -186,7 +189,8 @@ def get_ip(request):
 
 def verify_request(request, api_key, add=True, max_ips=ACCOUNT_MAX_IPS):
     if check_api_key(api_key) is None:
-        return {'success': False, 'message': 'Invalid API Key header', 'code': 403}
+        error = errors.api_key_invalid()
+        return {'success': False, 'message': error.json['message'], 'code': error.status_code}
 
     ip_address = get_ip(request)
     account = check_api_key(api_key)
@@ -199,6 +203,7 @@ def verify_request(request, api_key, add=True, max_ips=ACCOUNT_MAX_IPS):
             accounts.update_one({ACCOUNT_API_KEY: api_key},
                                 {"$push": {ACCOUNT_IP_LIST: hashed_ip}})
         else:
-            return {'success': False, 'message': 'IP not authorized please turn off any VPN or Proxy service. Account sharing will lead to permanent termination of your account', 'code': 403}
-
+            error = errors.ip_unauthorized()
+            return {'success': False, 'message': error.json['message'], 'code': error.status_code}
+                    
     return {'success': True, 'message': '', 'code': 200}

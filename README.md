@@ -8,12 +8,12 @@
 - [x] Implement `login` function.
 - [x] Create `make account` function.
 - [x] Refactor code: move functions to a separate library.
+- [x] make and add unit tests
+- [x] add tier system into all functions
+- [x] make consistent api validation and proper api responses
 - [ ] Add comments, and doc strings 
-- [ ] make and add unit tests
 - [ ] add check headers function to check for required headers 
-- [ ] Make the tier system into all functions
 - [ ] Organize the functions 
-- [ ] make consistent api validation and proper api responses
 - [ ] remove print functions and add proper logging 
 - [ ] put account based function in their own module 
 - [ ] Create a wrapper for porn detection.
