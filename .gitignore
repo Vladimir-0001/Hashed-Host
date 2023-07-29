@@ -6,3 +6,5 @@ hashed/__pycache__/
 *.pyc
 
 *.hashed
+
+.coverage
