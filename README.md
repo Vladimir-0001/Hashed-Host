@@ -12,7 +12,7 @@
 - [x] add tier system into all functions
 - [x] make consistent api validation and proper api responses
 - [x] Error management: refactor HTTP errors.
-- [x] Add comments, and doc strings 
+- [ ] Add comments, and doc strings 
 - [ ] Refactor: consistent error handling in `tools.py`
 - [ ] Change: store the `encrypted_upload` function encryption key size in `constants.py`
 - [ ] Add file streaming without storing any unencrypted version on the server, EVER
