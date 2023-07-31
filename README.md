@@ -20,8 +20,11 @@
 - [ ] Organize the functions 
 - [ ] remove print functions and add proper logging 
 - [ ] put account based function in their own module 
-- [ ] Create a wrapper for porn detection.
+- [ ] Create a wrapper for porn detection ai shit .
 - [ ] Integrate with Discord: use Discord bot for frontend dashboard.
-- [ ] Implement banning functionality: `ban` and `IP` bans.
-- [ ] Error management: refactor HTTP errors.
-- [ ] 
+- [ ] Implement banning functionality: `ban` and `IP` bans. 
+- [ ] Front End: Home page 
+- [ ] Front End: User dashboard
+- [ ] Front End: Login
+- [ ] Front End: config maker 
+- [ ] Front End: commit suicide 
