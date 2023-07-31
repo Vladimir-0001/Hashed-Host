@@ -11,13 +11,20 @@
 - [x] make and add unit tests
 - [x] add tier system into all functions
 - [x] make consistent api validation and proper api responses
+- [x] Error management: refactor HTTP errors.
 - [ ] Add comments, and doc strings 
+- [ ] Refactor: consistent error handling in `tools.py`
+- [ ] Change: store the `encrypted_upload` function encryption key size in `constants.py`
+- [ ] Add file streaming without storing any unencrypted version on the server, EVER
 - [ ] add check headers function to check for required headers 
 - [ ] Organize the functions 
 - [ ] remove print functions and add proper logging 
 - [ ] put account based function in their own module 
-- [ ] Create a wrapper for porn detection.
+- [ ] Create a wrapper for porn detection ai shit .
 - [ ] Integrate with Discord: use Discord bot for frontend dashboard.
-- [ ] Implement banning functionality: `ban` and `IP` bans.
-- [ ] Error management: refactor HTTP errors.
-- [ ] 
+- [ ] Implement banning functionality: `ban` and `IP` bans. 
+- [ ] Front End: Home page 
+- [ ] Front End: User dashboard
+- [ ] Front End: Login
+- [ ] Front End: config maker 
+- [ ] Front End: commit suicide 

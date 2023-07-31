@@ -32,16 +32,22 @@ def is_hex(s):
         return False
     
 def process_ip(ip_address):
+    #remove the last octet of ipv4 or ipv6 ip's
     ip_address = anonymize_ip(ip_address)
+    #hash 256 em
+    # you might want to add a salt but its anatomized ip's so who gives a shit
     hashed_ip = hashlib.sha256(bytes(ip_address, 'utf-8')).hexdigest()
     return hashed_ip
     
 def save_file(data,cipher_iv,encryption_key,file_name):
+    # create a random integer file ID
     file_id = ''.join(random.choice('0123456789') for _ in range(FILE_ID_LENGTH))
+    # make sure the file id does'nt already exist in storage 
     file = storage.find_one({STORAGE_FILE_ID:file_id})
     if file is not None:
         raise ValueError("a file with this ID already exists")
     
+    # create a database entry for the new file data 
     file_data = {
         STORAGE_FILE_ID:file_id,
         STORAGE_FILE_NAME:sanitize_filename(file_name),
@@ -49,9 +55,10 @@ def save_file(data,cipher_iv,encryption_key,file_name):
         STORAGE_FILE_FLAGGED: False,
         STORAGE_FILE_CIPHER_IV: cipher_iv
     }
-    print(file_data)
+    #put it in the db 
     storage.insert_one(file_data)
     print('inserted file data into db')
+    #save the file as a .hashed file 
     with open(FILE_SAVE_LOCATION + file_id +'.hashed', 'wb+') as file:
         file.write(data)
     
@@ -66,18 +73,20 @@ def encrypt_data(data, hex_key):
     key = bytes.fromhex(hex_key)
     cipher = AES.new(key, AES.MODE_CBC)
     encrypted_data = cipher.encrypt(pad(data, AES.block_size))
-    #we have to save the iv too to decrypt the file shits 
+    #we have to save the iv too to decrypt the file shit 
     return encrypted_data, cipher.iv.hex()
 
 
 def decrypt_data(data, hex_key, hex_iv):
+    #check for the required data 
     assert is_hex(hex_key), 'Invalid key hex'
     assert len(hex_key) == 32, 'Invalid key length!'
     assert is_hex(hex_iv), 'Invalid iv hex'
-    
+    #load the cipher iv and key into bytes from string hex
     cipher_iv = bytes.fromhex(hex_iv)
     key = bytes.fromhex(hex_key)
     
+    #create the cipher and decrypt the data 
     cipher = AES.new(key,AES.MODE_CBC,iv=cipher_iv)
     decrypted_bytes = unpad(cipher.decrypt(data),AES.block_size)
     
@@ -85,23 +94,27 @@ def decrypt_data(data, hex_key, hex_iv):
 
 
 def decrypt_file(file_id, encryption_key):
+    #check to make sure the file actually exists 
     file_data = storage.find_one({STORAGE_FILE_ID:file_id})
     if file_data is None:
         return ValueError("File cannot be none")
+    #hash the key that was provided 
     hashed_key = hashlib.sha256(bytes(encryption_key, 'utf-8')).hexdigest()
+    #cross check the hashed key that was provided with the one stored in file data
     if not hashed_key == file_data[STORAGE_FILE_PASSWORD]:
         return ValueError("Invalid encryption Key")
+    #check to make sure the file is actually stored on the server and not just on the db 
     file_path = FILE_SAVE_LOCATION + file_id +'.hashed'
     if not os.path.exists(file_path):
         return FileNotFoundError("File could not be found")
     with open(file_path, 'rb') as file:
         data = file.read()
-    
     decrypted_data = decrypt_data(data,encryption_key,file_data[STORAGE_FILE_CIPHER_IV])
     return decrypted_data
 
 
 def encrypted_upload(data,encryption_key,api_key,file_name):
+    
     if encryption_key == None:
         encryption_key = secrets.token_bytes(16).hex() #128 bit key 
         
