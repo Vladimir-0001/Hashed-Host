@@ -11,7 +11,11 @@
 - [x] make and add unit tests
 - [x] add tier system into all functions
 - [x] make consistent api validation and proper api responses
-- [ ] Add comments, and doc strings 
+- [x] Error management: refactor HTTP errors.
+- [x] Add comments, and doc strings 
+- [ ] Refactor: consistent error handling in `tools.py`
+- [ ] Change: store the `encrypted_upload` function encryption key size in `constants.py`
+- [ ] Add file streaming without storing any unencrypted version on the server, EVER
 - [ ] add check headers function to check for required headers 
 - [ ] Organize the functions 
 - [ ] remove print functions and add proper logging 
