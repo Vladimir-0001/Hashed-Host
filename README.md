@@ -5,26 +5,32 @@
 - [x] Implement `redeem` functionality: add current subscription.
 - [x] Security: encrypt data from `upload` function if the key is provided.
 - [x] Code cleanup: refactor global variables.
-- [x] Implement `login` function.
-- [x] Create `make account` function.
+- [x] Addition : Implement `login` function.
+- [x] Addition : Create `make account` function.
 - [x] Refactor code: move functions to a separate library.
-- [x] make and add unit tests
-- [x] add tier system into all functions
-- [x] make consistent api validation and proper api responses
+- [x] Addition : make and add unit tests
+- [x] Change: add tier system into all functions
+- [x] Error handling: make consistent api validation and proper api responses
 - [x] Error management: refactor HTTP errors.
-- [ ] Add comments, and doc strings 
-- [ ] Refactor: consistent error handling in `tools.py`
-- [ ] Change: store the `encrypted_upload` function encryption key size in `constants.py`
-- [ ] Add file streaming without storing any unencrypted version on the server, EVER
-- [ ] add check headers function to check for required headers 
-- [ ] Organize the functions 
-- [ ] remove print functions and add proper logging 
-- [ ] put account based function in their own module 
-- [ ] Create a wrapper for porn detection ai shit .
-- [ ] Integrate with Discord: use Discord bot for frontend dashboard.
-- [ ] Implement banning functionality: `ban` and `IP` bans. 
+- [x] Docs: Add comments
+- [ ] Refactor: Consistent error handling in `tools.py`
+- [ ] Refactor: Change encryption method to be more streaming friendly like CTR 
+- [ ] Refactor: Add file streaming without storing any unencrypted version on the server, EVER
+- [ ] Docs: Add doc strings 
+- [ ] Fix: Move the unit test `tier_id` to constants 
+- [ ] Addition: Check the generated `api_key` doesn't already exist in the `make_account` function
+- [ ] Security: Better anonymize ipv6 ip's
+- [ ] Change: Update `check_api_key` function with better error handling 
+- [ ] Unit Test: Make a unit test for an invalid  key for the upload endpoint 
+- [ ] Security : Store the `encrypted_upload` function encryption key size in `constants.py`
+- [ ] Change: Move header checks to a separate function
+- [ ] Clean-up: Organize the functions 
+- [ ] Clean-up: Remove print functions and add proper logging 
+- [ ] Clean-up: Put account based function in their own module 
+- [ ] Addition: Create a wrapper for porn detection ai shit .
+- [ ] Addition: Discord bot for flagged file review 
+- [ ] Addition: Implement banning functionality: `ban` and `IP` bans. 
 - [ ] Front End: Home page 
 - [ ] Front End: User dashboard
 - [ ] Front End: Login
-- [ ] Front End: config maker 
-- [ ] Front End: commit suicide 
+- [ ] Front End: Config maker  

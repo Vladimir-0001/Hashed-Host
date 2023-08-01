@@ -1,13 +1,23 @@
-from flask import Flask, render_template, request, Blueprint, send_file
-from hashed.tools import *
-from hashed.errors import Errors as errors
 from io import BytesIO
+
+from flask import Blueprint, Flask, render_template, request, send_file
+from hashed.errors import Errors as errors
+from hashed.tools import *
 
 file = Blueprint("file",__name__,url_prefix='/file')
 
 
 @file.route('/raw/<file_id>/<password>')
 def raw(file_id, password):
+    """return a raw, decrypted version of a file 
+
+    Args:
+        file_id (str): the file id of the file
+        password (str): the aes password in hex format 
+
+    Returns:
+        file :  BytesIO decrypted file 
+    """
     #search for the file in the db 
     file = storage.find_one({STORAGE_FILE_ID:file_id})
     if not file:
