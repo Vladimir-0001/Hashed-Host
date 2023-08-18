@@ -1,7 +1,8 @@
+import os
+
 from flask import Flask, request
-import os 
-from hashed.v1 import v1
 from hashed.file import file
+from hashed.v1 import v1
 
 #you can remove or change this if its gay on mac i think the command is  'clear' on mac and linux 
 os.system('cls')
@@ -14,7 +15,7 @@ def change_server_host(response):
     return response
     
 
-app.register_blueprint(v1, url_prefix = '/api/v1')
+app.register_blueprint(v1)
 app.register_blueprint(file)
 
 if __name__ == '__main__':
